@@ -77,8 +77,7 @@ func ExampleReader() {
 }
 
 func ExampleWriter_RegisterCompressor() {
-	// Override the default Deflate compressor with a higher compression
-	// level.
+	// Override the default Deflate compressor with a higher compression level.
 
 	// Create a buffer to write our archive to.
 	buf := new(bytes.Buffer)
