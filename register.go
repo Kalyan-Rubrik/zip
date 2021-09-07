@@ -10,8 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"sync"
-
-	"github.com/juju/mempool"
 )
 
 // A Compressor returns a compressing writer, writing to the
@@ -24,7 +22,7 @@ type Compressor func(io.Writer) (io.WriteCloser, error)
 // when they're finished reading.
 type Decompressor func(io.Reader) io.ReadCloser
 
-var flateWriterPool mempool.Pool
+var flateWriterPool sync.Pool
 
 func newFlateWriter(w io.Writer) io.WriteCloser {
 	fw, ok := flateWriterPool.Get().(*flate.Writer)

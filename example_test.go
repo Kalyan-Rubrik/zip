@@ -12,7 +12,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/juju/zip"
+	"github.com/Kalyan-Rubrik/zip"
 )
 
 func ExampleWriter() {
