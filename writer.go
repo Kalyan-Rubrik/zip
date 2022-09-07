@@ -28,6 +28,7 @@ type Writer struct {
 	closed      bool
 	compressors map[uint16]Compressor
 	comment     string
+	names       map[string]int // filename -> index in dir slice.
 
 	// testHookCloseSizeOffset if non-nil is called with the size
 	// of offset of the central directory at Close.
@@ -88,7 +89,13 @@ func (w *Writer) Close() error {
 
 	// write central directory
 	start := w.cw.count
+	records := uint64(0)
 	for _, h := range w.dir {
+		if h.FileHeader == nil {
+			// This entry has been superceded by a later appended entry.
+			continue
+		}
+		records++
 		var buf [directoryHeaderLen]byte
 		b := writeBuf(buf[:])
 		b.uint32(uint32(directoryHeaderSignature))
@@ -145,7 +152,6 @@ func (w *Writer) Close() error {
 	}
 	end := w.cw.count
 
-	records := uint64(len(w.dir))
 	size := uint64(end - start)
 	offset := uint64(start)
 
@@ -257,6 +263,13 @@ func (w *Writer) prepare(fh *FileHeader) error {
 	if len(w.dir) > 0 && w.dir[len(w.dir)-1].FileHeader == fh {
 		// See https://golang.org/issue/11144 confusion.
 		return errors.New("archive/zip: invalid duplicate FileHeader")
+	}
+	if i, ok := w.names[fh.Name]; ok {
+		// We're appending a file that existed already,
+		// so clear out the old entry so that it won't
+		// be added to the index.
+		w.dir[i].FileHeader = nil
+		delete(w.names, fh.Name)
 	}
 	return nil
 }

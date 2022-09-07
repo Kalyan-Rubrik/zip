@@ -532,6 +532,58 @@ func TestWriterCreateRaw(t *testing.T) {
 	}
 }
 
+func TestAppend(t *testing.T) {
+	// write a zip file
+	buf := new(bytes.Buffer)
+	w := NewWriter(buf)
+
+	for _, wt := range writeTests {
+		testCreate(t, w, &wt)
+	}
+
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// read it back
+	it, err := NewIterator(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// append a file to it.
+	abuf := new(bytes.Buffer)
+	w, err = it.Append(abuf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wt := WriteTest{
+		Name:   "foo",
+		Data:   []byte("Badgers, canines, weasels, owls, and snakes"),
+		Method: Store,
+		Mode:   0755,
+	}
+	testCreate(t, w, &wt)
+
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// read the whole thing back.
+	allBytes := append(buf.Bytes(), abuf.Bytes()...)
+
+	r, err := NewReader(bytes.NewReader(allBytes), int64(len(allBytes)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writeTests := append(writeTests[1:], wt)
+	for i, wt := range writeTests {
+		testReadFile(t, r.File[i], &wt)
+	}
+}
+
 func testCreate(t *testing.T, w *Writer, wt *WriteTest) {
 	header := &FileHeader{
 		Name:   wt.Name,
