@@ -32,6 +32,7 @@ type Reader struct {
 	File          []*File
 	Comment       string
 	decompressors map[uint16]Decompressor
+	size          int64
 
 	// fileList is a list of files sorted by ename,
 	// for use by the Open method.
@@ -96,6 +97,7 @@ func (z *Reader) init(r io.ReaderAt, size int64) error {
 		return err
 	}
 	z.r = r
+	z.size = size
 	// Since the number of directory records is not validated, it is not
 	// safe to preallocate z.File without first checking that the specified
 	// number of files is reasonable, since a malformed archive may
@@ -133,6 +135,34 @@ func (z *Reader) init(r io.ReaderAt, size int64) error {
 		return err
 	}
 	return nil
+}
+
+// Append appends entries to the existing zip archive represented by z.
+// The writer w should be positioned at the end of the archive data.
+// When the returned writer is closed, any entries with names that
+// already exist in the archive will have been "replaced" by the new
+// entries, although the original data will still be there.
+func (z *Reader) Append(w io.Writer) *Writer {
+	return z.newAppendingWriter(w)
+}
+
+func (z *Reader) newAppendingWriter(fw io.Writer) *Writer {
+	w := &Writer{
+		cw: &countWriter{
+			w:     bufio.NewWriter(fw),
+			count: z.size,
+		},
+		dir:   make([]*header, len(z.File), len(z.File)*3/2),
+		names: make(map[string]int),
+	}
+	for i, f := range z.File {
+		w.dir[i] = &header{
+			FileHeader: &f.FileHeader,
+			offset:     uint64(f.headerOffset),
+		}
+		w.names[f.Name] = i
+	}
+	return w
 }
 
 // RegisterDecompressor registers or overrides a custom decompressor for a

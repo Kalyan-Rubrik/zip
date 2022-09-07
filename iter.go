@@ -83,10 +83,10 @@ func (it *Iterator) Next() (*File, error) {
 // already exist in the archive will have been "replaced" by the new
 // entries, although the original data will still be there.
 func (it *Iterator) Append(w io.Writer) (*Writer, error) {
-	return newAppendingWriter(it, w)
+	return it.newAppendingWriter(w)
 }
 
-func newAppendingWriter(it *Iterator, fw io.Writer) (*Writer, error) {
+func (it *Iterator) newAppendingWriter(fw io.Writer) (*Writer, error) {
 	w := &Writer{
 		cw: &countWriter{
 			w:     bufio.NewWriter(fw),
