@@ -1,3 +1,3 @@
 module github.com/Kalyan-Rubrik/zip
 
-go 1.15
+go 1.18

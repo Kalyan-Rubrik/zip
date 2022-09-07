@@ -12,8 +12,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
-	"os"
 	"runtime"
 	"sort"
 	"strings"
@@ -22,7 +20,7 @@ import (
 )
 
 func TestOver65kFiles(t *testing.T) {
-	if testing.Short() && os.Getenv("GO_BUILDER_NAME") == "" {
+	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
 	buf := new(bytes.Buffer)
@@ -620,7 +618,7 @@ func testZip64(t testing.TB, size int64) *rleBuffer {
 			t.Fatal("read:", err)
 		}
 	}
-	gotEnd, err := ioutil.ReadAll(rc)
+	gotEnd, err := io.ReadAll(rc)
 	if err != nil {
 		t.Fatal("read end:", err)
 	}
